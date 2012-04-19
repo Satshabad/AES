@@ -112,6 +112,28 @@ class AES:
         """
         pass
 
+   #def _expandKey(self, z):
+   #    KeyExpansion(byte key[4*Nk], word w[Nb*(Nr+1)], Nk)
+   #    begin
+   #    word temp
+   #    i = 0
+   #    while (i < Nk)
+   #    w[i] = word(key[4*i], key[4*i+1], key[4*i+2], key[4*i+3])
+   #    i = i+1
+   #    end while
+   #    i = Nk
+   #    while (i < Nb * (Nr+1)]
+   #    temp = w[i-1]
+   #    if (i mod Nk = 0)
+   #    temp = SubWord(RotWord(temp)) xor Rcon[i/Nk]
+   #    else if (Nk > 6 and i mod Nk = 4)
+   #    temp = SubWord(temp)
+   #    end if
+   #    w[i] = w[i-Nk] xor temp
+   #    i = i + 1
+   #    end while
+   #    end
+
 
     def _addRoundKey(self, state, round): # returns state matrix
         """
@@ -300,7 +322,9 @@ class AES:
         Returns:
         w, after cyclic permutation is applied.
         """
-        pass
+        wordForRotate = collections.deque(word)
+        wordForRotate.rotate(-1)
+        return list(wordForRotate)
 
 
     def _shiftRows(self, state): # returns state matrix
@@ -348,6 +372,8 @@ class AES:
         Returns:
         w, after S-box substitution is applied to each byte.
         """
+        for i, byte in enumerate(word):
+            word[i] = self.sBox[byte]
 
     def _xtime(self, byte): # returns a byte
         """

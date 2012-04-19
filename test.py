@@ -108,9 +108,15 @@ class GeneticTest(unittest.TestCase):
                     [0x64, 0xbc, 0x3b, 0xf9],
                     [0x15, 0x92, 0x29, 0x1a]]
 
-        #self.assertEqual(self.aes._mixColumns(given), expected)
+        self.assertEqual(self.aes._mixColumns(given), expected)
         #self.assertEqual(self.aes._mixColumns(self.aes._invMixColumns(given)), given)
 
+
+    def test__rot(self):
+        self.assertEqual(self.aes._rot([0x63, 0x9, 0xcd, 0xba]), [ 0x9, 0xcd, 0xba, 0x63])
+
+    def text__subWord(self):
+        self.assertEqual(self.aes._rot([0x63, 0x9, 0xcd, 0xba]), [0x05, 0x60, 0x86, 0x62])
 
     def test__xtime(self):
         self.assertEqual(self.aes._xtime(0b01010110), 0b10101100)
