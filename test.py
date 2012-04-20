@@ -9,13 +9,10 @@ class GeneticTest(unittest.TestCase):
             [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f])
 
     def test__encrypt(self):
-
         given = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
         expected = [0x69, 0xc4, 0xe0, 0xd8, 0x6a, 0x7b, 0x4, 0x30, 0xd8, 0xcd, 0xb7, 0x80, 0x70, 0xb4, 0xc5, 0x5a]
 
         self.assertEqual(self.aes.encrypt(given), expected)
-
-
 
 
     def test__decrypt(self):
@@ -88,7 +85,6 @@ class GeneticTest(unittest.TestCase):
         self.assertEqual(self.aes._mult(0x0e, 0x5f), 0x17)
 
     def test__invMixColumns(self):
-
         #6353e08c 0960e104 cd70b751 bacad0e7
         expected = [[0x63, 0x9, 0xcd, 0xba],
             [0x53, 0x60, 0x70, 0xca],
@@ -98,10 +94,9 @@ class GeneticTest(unittest.TestCase):
 
         #5f726415 57f5bc92 f7be3b29 1db9f91a
         given = [[0x5f, 0x57, 0xf7, 0x1d],
-                 [0x72, 0xf5, 0xbe, 0xb9],
-                 [0x64, 0xbc, 0x3b, 0xf9],
-                 [0x15, 0x92, 0x29, 0x1a]]
-        self.print_in_col_order(self.aes._invMixColumns(given))
+            [0x72, 0xf5, 0xbe, 0xb9],
+            [0x64, 0xbc, 0x3b, 0xf9],
+            [0x15, 0x92, 0x29, 0x1a]]
         self.assertEqual(self.aes._invMixColumns(given), expected)
         self.assertEqual(self.aes._invMixColumns(self.aes._mixColumns(given)), given)
 
@@ -109,9 +104,9 @@ class GeneticTest(unittest.TestCase):
     def test__mixColumns(self):
         #6353e08c 0960e104 cd70b751 bacad0e7
         given = [[0x63, 0x9, 0xcd, 0xba],
-                [0x53, 0x60, 0x70, 0xca],
-                [0xe0, 0xe1, 0xb7, 0xd0],
-                [0x8c, 0x4, 0x51, 0xe7]]
+            [0x53, 0x60, 0x70, 0xca],
+            [0xe0, 0xe1, 0xb7, 0xd0],
+            [0x8c, 0x4, 0x51, 0xe7]]
 
 
 
@@ -126,7 +121,10 @@ class GeneticTest(unittest.TestCase):
 
 
     def test__expandKey(self):
-        pass
+        Nk = 6
+        self.aes.Nr = Nk + 4 + 2
+        print self.key_to_hex_string(self.aes._expandKey([0x8e, 0x73, 0xb0, 0xf7, 0xda, 0x0e, 0x64, 0x52, 0xc8, 0x10, 0xf3, 0x2b,
+                             0x80, 0x90, 0x79, 0xe5, 0x62, 0xf8, 0xea, 0xd2, 0x52, 0x2c, 0x6b, 0x7b], Nk))
 
     def test__addRoundKey(self):
         # 00112233445566778899aabbccddeeff
@@ -141,7 +139,7 @@ class GeneticTest(unittest.TestCase):
             [32, 96, 160, 224],
             [48, 112, 176, 240]]
 
-        print self.assertEqual(self.aes._addRoundKey(given,
+        self.assertEqual(self.aes._addRoundKey(given,
             [[0x00, 0x01, 0x02, 0x03], [0x04, 0x05, 0x06, 0x07], [0x08, 0x09, 0x0a, 0x0b], [0x0c, 0x0d, 0x0e, 0x0f]]),
             expected)
 
@@ -170,6 +168,22 @@ class GeneticTest(unittest.TestCase):
             for j, val in enumerate(row):
                 s[j][i] = hex(int(string[dexOfString: dexOfString + 2], 16))
         return s
+
+    def state_to_hex_string(self, state):
+        st = ""
+        for i in range(len(state)):
+            for j in range(len(state[0])):
+                st+= str(hex(state[j][i])) + " "
+        return st
+
+    def key_to_hex_string(self, state):
+        st = ""
+        print state
+        for i in range(len(state)):
+            for j in range(len(state[1])):
+                st+= str(hex(state[i][j])) + " "
+            st+='\n'
+        return st
 
 
 if __name__ == '__main__':

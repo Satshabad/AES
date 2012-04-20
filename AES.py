@@ -38,19 +38,19 @@ class AES:
         self.Nb = 4
 
         # The number of 32-bit words comprising the cipher key in this AES cipher.
-        self.Nk = 0
+        Nk = 0
         if len(z) == 16:
-            self.Nk = 4
+            Nk = 4
         elif len(z) == 24:
-            self.Nk = 6
+            Nk = 6
         elif len(z) == 32:
-            self.Nk = 8
+            Nk = 8
         else:
             raise ValueError
 
 
         # The number of rounds in this AES cipher.
-        self.Nr = self.Nk + self.Nb + 2
+        self.Nr = Nk + self.Nb + 2
 
         # The state matrices in this AES cipher.
         # int[][][] s
@@ -100,7 +100,7 @@ class AES:
                     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d]
 
         # The key schedule in this AES cipher.
-        self.expandedKey = self._expandKey(z)
+        self.expandedKey = self._expandKey(z, Nk)
 
     def encrypt(self, x): # returns array of bytes
         """
@@ -118,6 +118,11 @@ class AES:
         Throws:
         IllegalArgumentException - if the plaintext block length is not 128 bits (i.e. 16 bytes).
         """
+
+        if not len(x) == 16:
+            raise ValueError
+
+
         state = [[0 for val in range(self.Nb)] for row in range(self.Nb)]
 
         byteIndex = 0
@@ -126,8 +131,8 @@ class AES:
                 state[j][i] = x[byteIndex]
                 byteIndex +=1
 
-        print 'round[0].input', self.state_to_hex_string(state)
-        print 'round[ 0].k_sch', self.key_to_hex_string(self.expandedKey[0:self.Nb])
+        #print 'round[0].input', self.state_to_hex_string(state)
+        #print 'round[ 0].k_sch', self.key_to_hex_string(self.expandedKey[0:self.Nb])
 
         state = self._addRoundKey(state, self.expandedKey[0:self.Nb])
 
@@ -136,14 +141,14 @@ class AES:
 
         for round in range(1, self.Nr):
 
-            print 'round[ '+str(round)+' ].start', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].start', self.state_to_hex_string(state)
             state = self._subBytes(state)
-            print 'round[ '+str(round)+' ].s_box', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].s_box', self.state_to_hex_string(state)
             state = self._shiftRows(state)
-            print 'round[ '+str(round)+' ].s_row', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].s_row', self.state_to_hex_string(state)
             state = self._mixColumns(state)
-            print 'round[ '+str(round)+' ].m_col', self.state_to_hex_string(state)
-            print 'round[ '+str(round)+' ].k_sch', self.key_to_hex_string(self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
+            #print 'round[ '+str(round)+' ].m_col', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].k_sch', self.key_to_hex_string(self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
             state = self._addRoundKey(state, self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
 
         state = self._subBytes(state)
@@ -154,23 +159,11 @@ class AES:
 
         for i in range(len(state)):
             for j in range(len(state[0])):
-                cipherText.append(int(hex(state[j][i]), 16 ))
+                cipherText.append(state[j][i])
 
         return cipherText
 
-    def state_to_hex_string(self, state):
-        st = ""
-        for i in range(len(state)):
-            for j in range(len(state[0])):
-                st+= str(hex(state[j][i])) + " "
-        return st
 
-    def key_to_hex_string(self, state):
-        st = ""
-        for i in range(len(state)):
-            for j in range(len(state[0])):
-                st+= str(hex(state[i][j])) + " "
-        return st
 
     def decrypt(self, y): # returns array of bytes
         """
@@ -188,6 +181,10 @@ class AES:
         Throws:
         IllegalArgumentException - if the ciphertext block length is not 128 bits (i.e. 16 bytes).
         """
+        if not len(y) == 16:
+            raise ValueError
+
+
         state = [[0 for val in range(self.Nb)] for row in range(self.Nb)]
 
         byteIndex = 0
@@ -196,21 +193,21 @@ class AES:
                 state[j][i] = y[byteIndex]
                 byteIndex +=1
 
-        print 'round[0].input', self.state_to_hex_string(state)
-        print 'round[ 0].k_sch', self.key_to_hex_string(self.expandedKey[self.Nr*self.Nb : ((self.Nr+1)*self.Nb-1)+1])
+        #print 'round[0].input', self.state_to_hex_string(state)
+        #print 'round[ 0].k_sch', self.key_to_hex_string(self.expandedKey[self.Nr*self.Nb : ((self.Nr+1)*self.Nb-1)+1])
 
         state = self._addRoundKey(state, self.expandedKey[self.Nr*self.Nb : ((self.Nr+1)*self.Nb-1)+1])
 
         for round in range(self.Nr-1,0, -1):
 
-            print 'round[ '+str(round)+' ].istart', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].istart', self.state_to_hex_string(state)
             state = self._invShiftRows(state)
-            print 'round[ '+str(round)+' ].is_Row', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].is_Row', self.state_to_hex_string(state)
             state = self._invSubBytes(state)
-            print 'round[ '+str(round)+' ].is_Box', self.state_to_hex_string(state)
-            print 'round[ '+str(round)+' ].k_sch', self.key_to_hex_string(self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
+            #print 'round[ '+str(round)+' ].is_Box', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].k_sch', self.key_to_hex_string(self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
             state = self._addRoundKey(state, self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
-            print 'round[ '+str(round)+' ].ik_add', self.state_to_hex_string(state)
+            #print 'round[ '+str(round)+' ].ik_add', self.state_to_hex_string(state)
             state = self._invMixColumns(state)
 
         state = self._invShiftRows(state)
@@ -221,7 +218,7 @@ class AES:
 
         for i in range(len(state)):
             for j in range(len(state[0])):
-                cipherText.append(int(hex(state[j][i]), 16 ))
+                cipherText.append(int(state[j][i]))
 
         return cipherText
 
@@ -231,28 +228,38 @@ class AES:
 
 
 
-    def _expandKey(self, key):
+    def _expandKey(self, key, Nk):
         returnWords = [[] for val in range(self.Nb*(self.Nr+1))]
         temp = []
         i = 0
-        while i < self.Nk:
-            returnWords[i] = [key[4*i], key[4*i+1], key[4*i+2], key[4*i+3]]
+        while i < Nk:
+            returnWords[i] = [key[4*i], key[(4*i)+1], key[(4*i)+2], key[(4*i)+3]]
             i +=1
-        i = self.Nk
+
+        print "rounds of key exp", self.Nb * (self.Nr+1)
+        i = Nk
         while i < self.Nb * (self.Nr+1):
             temp = returnWords[i-1]
-            if i % self.Nk == 0:
+            if i % Nk == 0:
+
+
                 temp = self._subWord(self._rot(temp))
-                temp[0] = temp[0] ^ self.Rcon[i/self.Nk]
-            elif self.Nk > 6 and i % self.Nk == 4:
+                temp[0] = temp[0] ^ self.Rcon[i/Nk]
+
+            elif Nk > 6 and i % Nk == 4:
                 temp = self._subWord(temp)
-            returnWords[i] = self._xorListsOfBytes(returnWords[i-self.Nk], temp)
+            returnWords[i] = self._xorListsOfBytes(returnWords[i-Nk], temp)
             i += 1
         return returnWords
 
+    def _rcon(self, i):
+        x = 2**(i-1)
+        x = x <<24
+        return x
+
 
     def _xorListsOfBytes(self, byteList1, byteList2):
-        return [byteList1[i] ^ byteList2[i] for i in range(len(byteList1))]
+        return [byteList1[i] ^ byteList2[i] for i in range(len(byteList2))]
 
     def _addRoundKey(self, state, round): # returns state matrix
         """
