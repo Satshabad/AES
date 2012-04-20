@@ -35,13 +35,22 @@ class AES:
 
         # The number of 32-bit words comprising the plaintext and columns
         # comprising the state matrix of an AES cipher.
-        # int Nb
+        self.Nb = 4
 
         # The number of 32-bit words comprising the cipher key in this AES cipher.
-        # int Nk
+        self.Nk = 0
+        if len(z) == 16:
+            self.Nk = 4
+        elif len(z) == 24:
+            self.Nk = 6
+        elif len(z) == 32:
+            self.Nk = 8
+        else:
+            raise ValueError
+
 
         # The number of rounds in this AES cipher.
-        # int Nr
+        self.Nr = self.Nk + self.Nb + 2
 
         # The state matrices in this AES cipher.
         # int[][][] s
@@ -72,8 +81,26 @@ class AES:
                      0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0,
                      0x54, 0xbb, 0x16]
 
+
+        self.Rcon = [0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a,
+                    0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39,
+                    0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
+                    0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8,
+                    0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef,
+                    0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc,
+                    0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b,
+                    0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3,
+                    0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94,
+                    0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20,
+                    0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35,
+                    0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f,
+                    0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04,
+                    0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63,
+                    0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,
+                    0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d]
+
         # The key schedule in this AES cipher.
-        # int[] w
+        self.expandedKey = self._expandKey(z)
 
     def encrypt(self, x): # returns array of bytes
         """
@@ -91,8 +118,58 @@ class AES:
         Throws:
         IllegalArgumentException - if the plaintext block length is not 128 bits (i.e. 16 bytes).
         """
-        pass
+        state = [[0 for val in range(self.Nb)] for row in range(self.Nb)]
 
+        byteIndex = 0
+        for i, row in enumerate(state):
+            for j, val in enumerate(row):
+                state[j][i] = x[byteIndex]
+                byteIndex +=1
+
+        print 'round[0].input', self.state_to_hex_string(state)
+        print 'round[ 0].k_sch', self.key_to_hex_string(self.expandedKey[0:self.Nb])
+
+        state = self._addRoundKey(state, self.expandedKey[0:self.Nb])
+
+
+
+        for round in range(1, self.Nr):
+
+            print 'round[ '+str(round)+' ].start', self.state_to_hex_string(state)
+            state = self._subBytes(state)
+            print 'round[ '+str(round)+' ].s_box', self.state_to_hex_string(state)
+            state = self._shiftRows(state)
+            print 'round[ '+str(round)+' ].s_row', self.state_to_hex_string(state)
+            state = self._mixColumns(state)
+            print 'round[ '+str(round)+' ].m_col', self.state_to_hex_string(state)
+            print 'round[ '+str(round)+' ].k_sch', self.key_to_hex_string(self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
+            state = self._addRoundKey(state, self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
+
+        state = self._subBytes(state)
+        state = self._shiftRows(state)
+        state = self._addRoundKey(state, self.expandedKey[self.Nr*self.Nb:(self.Nr+1)*self.Nb])
+
+        cipherText = []
+
+        for i in range(len(state)):
+            for j in range(len(state[0])):
+                cipherText.append(int(hex(state[j][i]), 16 ))
+
+        return cipherText
+
+    def state_to_hex_string(self, state):
+        st = ""
+        for i in range(len(state)):
+            for j in range(len(state[0])):
+                st+= str(hex(state[j][i])) + " "
+        return st
+
+    def key_to_hex_string(self, state):
+        st = ""
+        for i in range(len(state)):
+            for j in range(len(state[0])):
+                st+= str(hex(state[i][j])) + " "
+        return st
 
     def decrypt(self, y): # returns array of bytes
         """
@@ -110,30 +187,42 @@ class AES:
         Throws:
         IllegalArgumentException - if the ciphertext block length is not 128 bits (i.e. 16 bytes).
         """
-        pass
+        state = [[0 for val in range(self.Nb)] for row in range(self.Nb)]
 
-   #def _expandKey(self, z):
-   #    KeyExpansion(byte key[4*Nk], word w[Nb*(Nr+1)], Nk)
-   #    begin
-   #    word temp
-   #    i = 0
-   #    while (i < Nk)
-   #    w[i] = word(key[4*i], key[4*i+1], key[4*i+2], key[4*i+3])
-   #    i = i+1
-   #    end while
-   #    i = Nk
-   #    while (i < Nb * (Nr+1)]
-   #    temp = w[i-1]
-   #    if (i mod Nk = 0)
-   #    temp = SubWord(RotWord(temp)) xor Rcon[i/Nk]
-   #    else if (Nk > 6 and i mod Nk = 4)
-   #    temp = SubWord(temp)
-   #    end if
-   #    w[i] = w[i-Nk] xor temp
-   #    i = i + 1
-   #    end while
-   #    end
+        byteIndex = 0
+        for i, row in enumerate(state):
+            for j, val in enumerate(row):
+                state[j][i] = x[byteIndex]
+                byteIndex +=1
 
+
+
+
+
+     1
+
+    def _expandKey(self, key):
+        returnWords = [[] for val in range(self.Nb*(self.Nr+1))]
+        temp = []
+        i = 0
+        while i < self.Nk:
+            returnWords[i] = [key[4*i], key[4*i+1], key[4*i+2], key[4*i+3]]
+            i +=1
+        i = self.Nk
+        while i < self.Nb * (self.Nr+1):
+            temp = returnWords[i-1]
+            if i % self.Nk == 0:
+                temp = self._subWord(self._rot(temp))
+                temp[0] = temp[0] ^ self.Rcon[i/self.Nk]
+            elif self.Nk > 6 and i % self.Nk == 4:
+                temp = self._subWord(temp)
+            returnWords[i] = self._xorListsOfBytes(returnWords[i-self.Nk], temp)
+            i += 1
+        return returnWords
+
+
+    def _xorListsOfBytes(self, byteList1, byteList2):
+        return [byteList1[i] ^ byteList2[i] for i in range(len(byteList1))]
 
     def _addRoundKey(self, state, round): # returns state matrix
         """
@@ -145,10 +234,15 @@ class AES:
 
         Returns:
         s, after adding the key schedule for round.
-
-
         """
-        pass
+        newState = [[0 for val in row] for row in state]
+
+        for i, row in enumerate(state):
+            for j, val in enumerate(row):
+                newState[j][i] = state[j][i] ^ round[i][j]
+
+        return newState
+
 
     def _invMixColumns(self, state): # returns state matrix
         """
@@ -162,10 +256,10 @@ class AES:
         """
         state = copy.deepcopy(state)
 
-        invColBox = [[0x0e, 0x0b ,0x0d, 0x09],
-                  [0x09, 0x0e, 0x0b, 0x0d],
-                  [0x0d, 0x09, 0x0e, 0x0b],
-                  [0x0b, 0x0d, 0x09, 0x0e]]
+        invColBox = [[14, 11 ,13, 9],
+                     [9, 14, 11, 13],
+                     [13, 9, 14, 11],
+                     [11, 13, 9, 14]]
 
         colOrderState = [[0 for val in row] for row in state ]
 
@@ -306,7 +400,7 @@ class AES:
             if (byte1 & 0b00000001) == 0b00000001:
                 sum = sum ^ toBeXored
 
-            toBeXored = self._xtime(byte2)
+            toBeXored = self._xtime(toBeXored)
             byte1 = byte1 >> 1
 
         return sum
@@ -374,6 +468,7 @@ class AES:
         """
         for i, byte in enumerate(word):
             word[i] = self.sBox[byte]
+        return word
 
     def _xtime(self, byte): # returns a byte
         """
