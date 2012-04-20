@@ -133,6 +133,7 @@ class AES:
 
 
 
+
         for round in range(1, self.Nr):
 
             print 'round[ '+str(round)+' ].start', self.state_to_hex_string(state)
@@ -192,14 +193,43 @@ class AES:
         byteIndex = 0
         for i, row in enumerate(state):
             for j, val in enumerate(row):
-                state[j][i] = x[byteIndex]
+                state[j][i] = y[byteIndex]
                 byteIndex +=1
 
+        print 'round[0].input', self.state_to_hex_string(state)
+        print 'round[ 0].k_sch', self.key_to_hex_string(self.expandedKey[self.Nr*self.Nb : ((self.Nr+1)*self.Nb-1)+1])
+
+        state = self._addRoundKey(state, self.expandedKey[self.Nr*self.Nb : ((self.Nr+1)*self.Nb-1)+1])
+
+        for round in range(self.Nr-1,0, -1):
+
+            print 'round[ '+str(round)+' ].istart', self.state_to_hex_string(state)
+            state = self._invShiftRows(state)
+            print 'round[ '+str(round)+' ].is_Row', self.state_to_hex_string(state)
+            state = self._invSubBytes(state)
+            print 'round[ '+str(round)+' ].is_Box', self.state_to_hex_string(state)
+            print 'round[ '+str(round)+' ].k_sch', self.key_to_hex_string(self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
+            state = self._addRoundKey(state, self.expandedKey[round*self.Nb:((round+1)*self.Nb-1)+1])
+            print 'round[ '+str(round)+' ].ik_add', self.state_to_hex_string(state)
+            state = self._invMixColumns(state)
+
+        state = self._invShiftRows(state)
+        state = self._invSubBytes(state)
+        state = self._addRoundKey(state, self.expandedKey[0:self.Nb])
+
+        cipherText = []
+
+        for i in range(len(state)):
+            for j in range(len(state[0])):
+                cipherText.append(int(hex(state[j][i]), 16 ))
+
+        return cipherText
 
 
 
 
-     1
+
+
 
     def _expandKey(self, key):
         returnWords = [[] for val in range(self.Nb*(self.Nr+1))]
@@ -267,39 +297,29 @@ class AES:
             for j in range(len(state[0])):
                 colOrderState[j][i] = state[i][j]
 
-        print "colOrderState:", colOrderState
 
         newState = [[0 for val in row] for row in state ]
 
         def matrixMult(matrix1, array):
 
             returnArray = [0 for val in array]
-            print 'statecol:', array
             for i, row in enumerate(matrix1):
-                print 'boxRow:', row
                 for j, boxVal in enumerate(row):
-                    print 'stateArray[i]:', array[j]
-                    print 'boxVal:', boxVal
-                    print 'result of mult:', self._mult(boxVal, array[j])
-                    print 'result of xor:', self._mult(boxVal, array[j]) ^ returnArray[i]
-                    returnArray[i] = self._mult(boxVal, array[j]) ^ returnArray[i]
-                    print
-                print 'returnArray:', returnArray
 
+                    returnArray[i] = self._mult(boxVal, array[j]) ^ returnArray[i]
             return returnArray
 
 
         for i, row in enumerate(colOrderState):
             newState[i] = matrixMult(invColBox, row)
-            print 'newState[i]:', newState[i]
 
-        print 'newState:', newState
+
+
 
         for i in range(len(state)):
             for j in range(len(state[0])):
                 state[i][j] = newState[j][i]
 
-        print 'state:', state
 
         return state
 
